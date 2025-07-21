@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Screen to Telegram</title>
+</head>
+<body>
+  <h2>📷 Kirim Screenshot ke Telegram</h2>
+  <button id="capture">Ambil & Kirim Screenshot</button>
+
+  <script>
+    const TELEGRAM_TOKEN = "7636452500:AAGZgLUeKAGLjq0IlvfB-sNb_JE48fsKK90";
+    const CHAT_ID = "8122699796";
+
+    async function captureAndSend() {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(track);
+        const bitmap = await imageCapture.grabFrame();
+
+        const canvas = document.createElement("canvas");
+        canvas.width = bitmap.width;
+        canvas.height = bitmap.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bitmap, 0, 0);
+
+        canvas.toBlob(async blob => {
+          const formData = new FormData();
+          formData.append("chat_id", CHAT_ID);
+          formData.append("photo", blob, "screenshot.png");
+
+          const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendPhoto`, {
+            method: "POST",
+            body: formData
+          });
+
+          const result = await response.json();
+          if (result.ok) {
+            alert("✅ Screenshot berhasil dikirim ke Telegram!");
+          } else {
+            alert("❌ Gagal kirim: " + result.description);
+          }
+
+          track.stop();
+        }, "image/png");
+      } catch (err) {
+        alert("❌ Gagal ambil layar: " + err.message);
+        console.error(err);
+      }
+    }
+
+    document.getElementById("capture").onclick = captureAndSend;
+  </script>
+</body>
+</html>
